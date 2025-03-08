@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Management Analysis</title>
+    <link rel="icon" href="assests/icon1.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+        }
+        .charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        canvas {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            max-height: 300px;
+        }
+        input {
+            margin-top: 10px;
+        }
+        main {
+            padding: 40px 10%;
+          }
+        
+          button {
+            background-color: #007acc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            border-radius: 5px;
+          }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Risk Management Analysis</h2>
+        <input type="file" id="fileInput" accept=".csv">
+        <div class="charts-container">
+            <canvas id="riskChart"></canvas>
+            <canvas id="exposureChart"></canvas>
+            <canvas id="failureChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const csvData = e.target.result;
+                    processCSV(csvData);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function processCSV(csvData) {
+            const rows = csvData.split('\n').slice(1); // Skip headers
+            const riskMap = {};
+            const exposureMap = {};
+            const failureMap = {};
+            const failureCountMap = {};  // Track occurrences for averaging
+
+            rows.forEach(row => {
+                const columns = row.split(',').map(cell => cell.trim()); // Clean spaces
+                if (columns.length < 6) return; // Skip invalid rows
+
+                const [user_id, risk_type, risk_exposure, risk_mitigation, risk_failure_rate, timestamp] = columns;
+
+                if (risk_type) {
+                    if (!riskMap[risk_type]) {
+                        riskMap[risk_type] = 0;
+                        exposureMap[risk_type] = 0;
+                        failureMap[risk_type] = 0;
+                        failureCountMap[risk_type] = 0;
+                    }
+                    
+                    riskMap[risk_type] += 1;
+                    
+                    const exposure = parseFloat(risk_exposure);
+                    if (!isNaN(exposure)) exposureMap[risk_type] += exposure;
+
+                    const failureRate = parseFloat(risk_failure_rate);
+                    if (!isNaN(failureRate)) {
+                        failureMap[risk_type] += failureRate;
+                        failureCountMap[risk_type] += 1;
+                    }
+                }
+            });
+
+            const labels = Object.keys(riskMap);
+            const riskCounts = labels.map(type => riskMap[type]);
+            const totalExposure = labels.map(type => exposureMap[type]);
+            
+            // Compute failure rate average instead of sum
+            const avgFailureRate = labels.map(type => 
+                failureCountMap[type] > 0 ? (failureMap[type] / failureCountMap[type]) : 0
+            );
+
+            createChart('riskChart', labels, riskCounts, 'Success Rate and Risk', 'rgba(54, 162, 235, 0.6)');
+            createChart('exposureChart', labels, totalExposure, 'Total Exposure ($)', 'rgba(255, 159, 64, 0.6)');
+            createChart('failureChart', labels, avgFailureRate, 'Failure Rate (%)', 'rgba(255, 99, 132, 0.6)');
+        }
+
+        function createChart(canvasId, labels, data, label, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: color,
+                        borderColor: color.replace('0.6', '1'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    </script>
+    <main>
+    
+        <button onclick="window.location.href='dashboard.html'">Back</button>
+    
+      </main>
+</body>
+</html>

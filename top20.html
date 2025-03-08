@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Portfolio Analysis</title>
+    <link rel="icon" href="assests/icon1.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        input {
+            margin-bottom: 10px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+        main {
+            padding: 40px 10%;
+          }
+        
+          button {
+            background-color: #007acc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            border-radius: 5px;
+          }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Financial Portfolio Analysis</h2>
+        <input type="file" id="csvFile" accept=".csv">
+        <canvas id="performanceChart"></canvas>
+    </div>
+    
+    <script>
+        document.getElementById('csvFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                processCSV(text);
+            };
+            reader.readAsText(file);
+        });
+
+        function processCSV(csv) {
+            const rows = csv.split('\n').slice(1); // Skip header
+            let investors = [];
+            rows.forEach(row => {
+                const cols = row.split(',');
+                if (cols.length < 6) return;
+                let [user_id, asset_type, asset_qtn, timestamp, profit_so_far, loss_so_far] = cols;
+                let netProfit = parseFloat(profit_so_far) - parseFloat(loss_so_far);
+                investors.push({ user_id, netProfit });
+            });
+            investors.sort((a, b) => b.netProfit - a.netProfit);
+            const topPerformers = investors.slice(0, 20);
+            renderChart(topPerformers);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.user_id),
+                    datasets: [{
+                        label: 'Net Profit',
+                        data: data.map(d => d.netProfit),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+    <main>
+    
+        <button onclick="window.location.href='dashboard.html'">Back</button>
+    
+      </main>
+    
+</body>
+</html>

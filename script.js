@@ -11,7 +11,7 @@ function validateLogin(event) {
     messageBox.textContent = "Login successful! Redirecting...";
     messageBox.className = "message success";
     setTimeout(() => {
-      window.location.href = "home.html";
+      window.location.href = "dashboard.html";
     }, 1500);
   } else if (username !== validUsername) {
     messageBox.textContent = "Invalid username. Please try again.";
